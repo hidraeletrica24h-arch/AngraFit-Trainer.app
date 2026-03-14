@@ -67,7 +67,6 @@ function App() {
     updatePayment, 
     markAsPaid, 
     requestConfirmation,
-    confirmPayment,
     deletePayment 
   } = usePayments();
 
@@ -216,7 +215,6 @@ function App() {
               onAddPayment={addPayment}
               onUpdatePayment={updatePayment}
               onMarkAsPaid={markAsPaid}
-              onConfirmPayment={confirmPayment}
               onDeletePayment={deletePayment}
             />
           );
