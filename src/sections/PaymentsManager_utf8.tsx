@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { 
   CreditCard, Plus, DollarSign, CheckCircle, AlertCircle, 
   Clock, TrendingUp
@@ -18,7 +18,6 @@ interface PaymentsManagerProps {
   onAddPayment: (payment: Omit<Payment, 'id'>) => Promise<any>;
   onUpdatePayment: (id: string, updates: Partial<Payment>) => Promise<any>;
   onMarkAsPaid: (id: string) => Promise<any>;
-  onConfirmPayment: (id: string) => Promise<any>;
   onDeletePayment: (id: string) => Promise<any>;
 }
 
@@ -28,7 +27,6 @@ export function PaymentsManager({
   onAddPayment, 
   onUpdatePayment, 
   onMarkAsPaid,
-  onConfirmPayment,
   onDeletePayment 
 }: PaymentsManagerProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -198,13 +196,7 @@ export function PaymentsManager({
         <div className="flex gap-2 mt-3">
           <Button 
             size="sm"
-            onClick={() => {
-              if (payment.status === 'aguardando_confirmacao') {
-                onConfirmPayment(payment.id);
-              } else {
-                onMarkAsPaid(payment.id);
-              }
-            }}
+            onClick={() => onMarkAsPaid(payment.id)}
             className={`flex-1 ${
               payment.status === 'aguardando_confirmacao'
                 ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'

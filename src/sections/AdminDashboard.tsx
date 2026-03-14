@@ -93,7 +93,7 @@ export function AdminDashboard({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -122,8 +122,8 @@ export function AdminDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Clientes Recentes */}
         <Card className="bg-[#111118] border-red-500/20">
-          <div className="p-6 flex flex-row items-center justify-between pb-4">
-            <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
+          <div className="p-4 sm:p-6 flex flex-row items-center justify-between pb-4">
+            <h3 className="text-white flex items-center gap-2 text-md sm:text-lg font-semibold">
               <Users className="w-5 h-5 text-red-500" strokeWidth={1.5} />
               Clientes Recentes
             </h3>
@@ -134,13 +134,13 @@ export function AdminDashboard({
               Ver todos
             </button>
           </div>
-          <div className="px-6 pb-6">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6">
             {recentClients.length > 0 ? (
               <div className="space-y-3">
                 {recentClients.map((client) => (
                   <div 
                     key={client.id} 
-                    className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-red-500/10 hover:border-red-500/30 transition-all"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-red-500/10 hover:border-red-500/30 transition-all"
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white font-bold">
                       {client.name.charAt(0).toUpperCase()}
@@ -170,8 +170,8 @@ export function AdminDashboard({
 
         {/* Próximos Agendamentos */}
         <Card className="bg-[#111118] border-red-500/20">
-          <div className="p-6 flex flex-row items-center justify-between pb-4">
-            <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
+          <div className="p-4 sm:p-6 flex flex-row items-center justify-between pb-4">
+            <h3 className="text-white flex items-center gap-2 text-md sm:text-lg font-semibold">
               <Calendar className="w-5 h-5 text-red-500" strokeWidth={1.5} />
               Próximos Agendamentos
             </h3>
@@ -182,13 +182,13 @@ export function AdminDashboard({
               Ver agenda
             </button>
           </div>
-          <div className="px-6 pb-6">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6">
             {upcomingSchedules.length > 0 ? (
               <div className="space-y-3">
                 {upcomingSchedules.map((schedule) => (
                   <div 
                     key={schedule.id} 
-                    className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-red-500/10 hover:border-red-500/30 transition-all"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-red-500/10 hover:border-red-500/30 transition-all"
                   >
                     <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 flex flex-col items-center justify-center">
                       <span className="text-xs text-red-400">
@@ -216,8 +216,8 @@ export function AdminDashboard({
 
         {/* Pagamentos Pendentes */}
         <Card className="bg-[#111118] border-red-500/20">
-          <div className="p-6 flex flex-row items-center justify-between pb-4">
-            <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
+          <div className="p-4 sm:p-6 flex flex-row items-center justify-between pb-4">
+            <h3 className="text-white flex items-center gap-2 text-md sm:text-lg font-semibold">
               <AlertCircle className="w-5 h-5 text-yellow-500" strokeWidth={1.5} />
               Pagamentos Pendentes
             </h3>
@@ -228,13 +228,13 @@ export function AdminDashboard({
               Ver todos
             </button>
           </div>
-          <div className="px-6 pb-6">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6">
             {pendingPayments.length > 0 ? (
               <div className="space-y-3">
                 {pendingPayments.slice(0, 5).map((payment) => (
                   <div 
                     key={payment.id} 
-                    className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 rounded-xl bg-[#0a0a0f] border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
                   >
                     <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                       <DollarSign className="w-5 h-5 text-yellow-500" strokeWidth={1.5} />
@@ -260,8 +260,8 @@ export function AdminDashboard({
 
         {/* Mensagens Não Lidas */}
         <Card className="bg-[#111118] border-red-500/20">
-          <div className="p-6 flex flex-row items-center justify-between pb-4">
-            <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
+          <div className="p-4 sm:p-6 flex flex-row items-center justify-between pb-4">
+            <h3 className="text-white flex items-center gap-2 text-md sm:text-lg font-semibold">
               <MessageSquare className="w-5 h-5 text-blue-500" strokeWidth={1.5} />
               Mensagens
             </h3>
@@ -272,7 +272,7 @@ export function AdminDashboard({
               Ver todas
             </button>
           </div>
-          <div className="px-6 pb-6">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center">

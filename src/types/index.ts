@@ -8,6 +8,7 @@ export interface Client {
   weight: number;
   goal: 'hipertrofia' | 'emagrecimento' | 'resistencia' | 'condicionamento';
   level: 'iniciante' | 'intermediario' | 'avancado';
+  gender: 'masculino' | 'feminino';
   plan: string;
   startDate: string;
   dueDate: string;
@@ -155,6 +156,7 @@ export const MEAL_TYPES = [
   'Café da Manhã',
   'Lanche da Manhã',
   'Almoço',
+  'Lanche da Tarde',
   'Pré-treino',
   'Pós-treino',
   'Jantar',

@@ -1,8 +1,41 @@
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import type { Message } from '@/types';
 
 export function useMessages() {
-  const [messages, setMessages] = useLocalStorage<Message[]>('angrafit_messages', []);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedMessages: Message[] = (data || []).map(m => ({
+        id: m.id,
+        clientId: m.client_id,
+        title: m.title,
+        content: m.content,
+        type: m.type,
+        date: m.date,
+        read: m.read
+      }));
+      setMessages(formattedMessages);
+    } catch (e) {
+      console.error('Erro ao buscar mensagens:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getClientMessages = (clientId: string): Message[] => {
     return messages.filter(m => m.clientId === clientId).sort((a, b) => 
@@ -14,32 +47,72 @@ export function useMessages() {
     return messages.filter(m => m.clientId === clientId && !m.read).length;
   };
 
-  const addMessage = (message: Omit<Message, 'id' | 'date' | 'read'>): Message => {
-    const newMessage: Message = {
-      ...message,
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      date: new Date().toISOString(),
-      read: false
-    };
-    setMessages(prev => [...prev, newMessage]);
-    return newMessage;
+  const addMessage = async (message: Omit<Message, 'id' | 'date' | 'read'>) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert([{
+          client_id: message.clientId,
+          title: message.title,
+          content: message.content,
+          type: message.type
+        }]);
+
+      if (error) throw error;
+      await fetchMessages();
+      return true;
+    } catch (e) {
+      console.error('Erro ao adicionar mensagem:', e);
+      throw e;
+    }
   };
 
-  const markAsRead = (id: string): boolean => {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
-    return true;
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchMessages();
+      return true;
+    } catch (e) {
+      console.error('Erro ao marcar mensagem como lida:', e);
+      throw e;
+    }
   };
 
-  const markAllAsRead = (clientId: string): boolean => {
-    setMessages(prev => prev.map(m => 
-      m.clientId === clientId ? { ...m, read: true } : m
-    ));
-    return true;
+  const markAllAsRead = async (clientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+      await fetchMessages();
+      return true;
+    } catch (e) {
+      console.error('Erro ao marcar todas as mensagens como lidas:', e);
+      throw e;
+    }
   };
 
-  const deleteMessage = (id: string): boolean => {
-    setMessages(prev => prev.filter(m => m.id !== id));
-    return true;
+  const deleteMessage = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setMessages(prev => prev.filter(m => m.id !== id));
+      return true;
+    } catch (e) {
+      console.error('Erro ao excluir mensagem:', e);
+      throw e;
+    }
   };
 
   const getMessageTypeLabel = (type: Message['type']): string => {
@@ -64,6 +137,7 @@ export function useMessages() {
 
   return {
     messages,
+    isLoadingMessages: isLoading,
     getClientMessages,
     getUnreadCount,
     addMessage,

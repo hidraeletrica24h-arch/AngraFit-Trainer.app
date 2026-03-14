@@ -207,11 +207,11 @@ export function Settings({ onClearData }: SettingsProps) {
             </div>
             <div className="p-4 rounded-xl bg-[#0a0a0f] border border-red-500/10">
               <p className="text-gray-500 text-sm">Armazenamento</p>
-              <p className="text-white font-bold">LocalStorage</p>
+              <p className="text-white font-bold">Supabase (Cloud)</p>
             </div>
             <div className="p-4 rounded-xl bg-[#0a0a0f] border border-red-500/10">
               <p className="text-gray-500 text-sm">Modo</p>
-              <p className="text-white font-bold">100% Offline</p>
+              <p className="text-green-400 font-bold">Online Sync</p>
             </div>
             <div className="p-4 rounded-xl bg-[#0a0a0f] border border-red-500/10">
               <p className="text-gray-500 text-sm">Status</p>

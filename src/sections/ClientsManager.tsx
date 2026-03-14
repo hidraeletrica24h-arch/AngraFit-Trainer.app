@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  Users, Plus, Search, Edit2, Trash2, 
+  Users, Plus, Search, Edit2, 
   TrendingUp, Target, Activity, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,9 @@ import type { Client } from '@/types';
 
 interface ClientsManagerProps {
   clients: Client[];
-  onAddClient: (client: Omit<Client, 'id'>) => void;
-  onUpdateClient: (id: string, updates: Partial<Client>) => void;
-  onDeleteClient: (id: string) => void;
+  onAddClient: (client: Omit<Client, 'id'>) => Promise<any>;
+  onUpdateClient: (id: string, updates: Partial<Client>) => Promise<any>;
+  onDeleteClient: (id: string) => Promise<any>;
 }
 
 const GOALS = [
@@ -48,6 +48,7 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
     weight: '',
     goal: 'hipertrofia',
     level: 'iniciante',
+    gender: 'masculino' as Client['gender'],
     plan: '',
     password: '',
     observations: '',
@@ -58,7 +59,7 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const clientData = {
       name: formData.name,
       age: parseInt(formData.age) || 0,
@@ -66,6 +67,7 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
       weight: parseFloat(formData.weight) || 0,
       goal: formData.goal as Client['goal'],
       level: formData.level as Client['level'],
+      gender: formData.gender as Client['gender'],
       plan: formData.plan,
       password: formData.password || '123456',
       observations: formData.observations,
@@ -74,14 +76,18 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     };
 
-    if (editingClient) {
-      onUpdateClient(editingClient.id, clientData);
-    } else {
-      onAddClient(clientData);
+    try {
+      if (editingClient) {
+        await onUpdateClient(editingClient.id, clientData);
+      } else {
+        await onAddClient(clientData);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      alert('Erro ao salvar cliente. Verifique a conexão ou se todos os campos estão corretos.');
     }
-
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const resetForm = () => {
@@ -92,6 +98,7 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
       weight: '',
       goal: 'hipertrofia',
       level: 'iniciante',
+      gender: 'masculino',
       plan: '',
       password: '',
       observations: '',
@@ -109,6 +116,7 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
       weight: client.weight.toString(),
       goal: client.goal,
       level: client.level,
+      gender: client.gender,
       plan: client.plan,
       password: client.password,
       observations: client.observations,
@@ -117,10 +125,10 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cliente?')) {
-      onDeleteClient(id);
-    }
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm("Deseja excluir este cliente?");
+    if (!confirmDelete) return;
+    await onDeleteClient(id);
   };
 
   return (
@@ -213,6 +221,19 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
                     {LEVELS.map(l => (
                       <SelectItem key={l.value} value={l.value} className="text-white">{l.label}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-gray-400">Gênero</Label>
+                <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v as Client['gender'] })}>
+                  <SelectTrigger className="bg-[#0a0a0f] border-red-500/30 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111118] border-red-500/30">
+                    <SelectItem value="masculino" className="text-white">Masculino</SelectItem>
+                    <SelectItem value="feminino" className="text-white">Feminino</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -352,10 +373,15 @@ export function ClientsManager({ clients, onAddClient, onUpdateClient, onDeleteC
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleDelete(client.id)}
-                    className="border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("BOTÃO EXCLUIR CLICADO");
+                      handleDelete(client.id);
+                    }}
+                    className="border-red-500 text-red-500"
                   >
-                    <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                    Excluir
                   </Button>
                 </div>
               </CardContent>

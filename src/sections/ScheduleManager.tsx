@@ -14,10 +14,10 @@ import type { Client, Schedule } from '@/types';
 interface ScheduleManagerProps {
   clients: Client[];
   schedules: Schedule[];
-  onAddSchedule: (schedule: Omit<Schedule, 'id'>) => void;
-  onUpdateSchedule: (id: string, updates: Partial<Schedule>) => void;
-  onMarkAsCompleted: (id: string) => void;
-  onCancelSchedule: (id: string) => void;
+  onAddSchedule: (schedule: Omit<Schedule, 'id'>) => Promise<any>;
+  onUpdateSchedule: (id: string, updates: Partial<Schedule>) => Promise<any>;
+  onMarkAsCompleted: (id: string) => Promise<any>;
+  onCancelSchedule: (id: string) => Promise<any>;
 }
 
 export function ScheduleManager({ 
@@ -58,7 +58,7 @@ export function ScheduleManager({
     return schedules.filter(s => s.date === dateStr).sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const client = clients.find(c => c.id === formData.clientId);
     if (!client) return;
 
@@ -73,14 +73,29 @@ export function ScheduleManager({
       notes: formData.notes
     };
 
-    if (editingSchedule) {
-      onUpdateSchedule(editingSchedule.id, scheduleData);
-    } else {
-      onAddSchedule(scheduleData);
+    try {
+      if (editingSchedule) {
+        await onUpdateSchedule(editingSchedule.id, scheduleData);
+      } else {
+        await onAddSchedule(scheduleData);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar agendamento:', error);
+      alert('Erro ao salvar agendamento. Verifique a conexão.');
     }
+  };
 
-    resetForm();
-    setIsDialogOpen(false);
+  const handleCancel = async (id: string) => {
+    if (window.confirm('Deseja CANCELAR este agendamento?')) {
+      try {
+        await onCancelSchedule(id);
+      } catch (error) {
+        console.error('Erro ao cancelar agendamento:', error);
+        alert('Não foi possível cancelar o agendamento.');
+      }
+    }
   };
 
   const resetForm = () => {
@@ -212,9 +227,13 @@ export function ScheduleManager({
                       </Button>
                       <Button 
                         size="sm"
-                        variant="outline"
-                        onClick={() => onCancelSchedule(schedule.id)}
-                        className="border-red-500/30 text-red-400"
+                        variant="ghost"
+                        onClick={(e) => { 
+                          e.preventDefault();
+                          e.stopPropagation(); 
+                          handleCancel(schedule.id); 
+                        }}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       >
                         <XCircle className="w-4 h-4" />
                       </Button>

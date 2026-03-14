@@ -12,6 +12,9 @@ interface AdminSidebarProps {
   onToggleMusic: () => void;
   unreadMessages: number;
   pendingPayments: number;
+  isOpen: boolean;
+  onClose: () => void;
+  isOnline: boolean;
 }
 
 const menuItems = [
@@ -33,7 +36,10 @@ export function AdminSidebar({
   onToggleVoice,
   onToggleMusic,
   unreadMessages,
-  pendingPayments
+  pendingPayments,
+  isOpen,
+  onClose,
+  isOnline
 }: AdminSidebarProps) {
   const getBadge = (item: typeof menuItems[0]) => {
     if (item.badge === 'unreadMessages' && unreadMessages > 0) {
@@ -46,22 +52,44 @@ export function AdminSidebar({
   };
 
   return (
-    <aside className="w-64 h-screen bg-[#0d0d12] border-r border-red-500/20 flex flex-col fixed left-0 top-0 z-50">
-      {/* Header */}
-      <div className="p-6 border-b border-red-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center pulse-red">
-            <Dumbbell className="w-6 h-6 text-white" strokeWidth={1.5} />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">AngraFit</h2>
-            <p className="text-xs text-red-500">Admin Panel</p>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      {/* Sidebar */}
+      <aside className={`
+        fixed left-0 top-0 h-screen w-64 bg-[#0d0d12] border-r border-red-500/20 
+        flex flex-col z-50 transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0
+      `}>
+        {/* Header */}
+        <div className="p-6 border-b border-red-500/20 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center pulse-red">
+              <Dumbbell className="w-6 h-6 text-white" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">AngraFit</h2>
+              <p className="text-xs text-red-500">Admin Panel</p>
+            </div>
+          </div>
+          {/* Close Menu Button (Mobile Only) */}
+          <button 
+            onClick={onClose}
+            className="md:hidden text-gray-400 hover:text-white p-1"
+          >
+            &times;
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -100,7 +128,7 @@ export function AdminSidebar({
         </ul>
       </nav>
 
-      {/* Quick Actions */}
+      {/* Quick Actions & Status */}
       <div className="p-4 border-t border-red-500/20">
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
@@ -119,14 +147,31 @@ export function AdminSidebar({
           </button>
         </div>
 
+        {/* Supabase Connection Status */}
+        <div className="mb-4 flex items-center justify-between p-3 rounded-xl bg-[#111118] border border-red-500/10">
+          <span className="text-xs font-medium text-gray-400 flex items-center gap-2">
+            Banco de Dados
+          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isOnline ? 'text-green-500' : 'text-red-500'}`}>
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
+            <div className="relative flex h-2.5 w-2.5">
+              {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500/20 transition-all"
+          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500/20 transition-all font-medium"
         >
           <LogOut className="w-4 h-4" strokeWidth={1.5} />
-          <span className="font-medium">Sair</span>
+          <span>Sair</span>
         </button>
       </div>
     </aside>
+    </>
   );
 }

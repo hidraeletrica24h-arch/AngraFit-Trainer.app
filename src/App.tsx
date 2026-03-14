@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LandingScreen } from './sections/LandingScreen';
 import { LoginScreen } from './sections/LoginScreen';
 import { AdminSidebar } from './sections/AdminSidebar';
 import { AdminDashboard } from './sections/AdminDashboard';
@@ -12,13 +13,15 @@ import { PDFEditor } from './sections/PDFEditor';
 import { Settings } from './sections/Settings';
 import { ClientDashboard } from './sections/ClientDashboard';
 import { MusicPlayer } from './sections/MusicPlayer';
-import { useAuth, useWorkouts, useDiets, usePayments, useMessages, useSchedule, useProgress } from './hooks';
-import type { Client } from './types';
+import { useAuth, useWorkouts, useDiets, usePayments, useMessages, useSchedule, useProgress, useSupabaseStatus, useClients } from './hooks';
+import { Menu, Loader2 } from 'lucide-react';
 import './App.css';
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { 
     isAuthenticated, 
@@ -27,10 +30,16 @@ function App() {
     loginAdmin, 
     loginClient, 
     logout, 
-    getCurrentClient,
-    clients,
-    setClients
+    getCurrentClient
   } = useAuth();
+
+  const {
+    clients,
+    isLoadingClients,
+    addClient: handleAddClient,
+    updateClient: handleUpdateClient,
+    deleteClient: handleDeleteClient
+  } = useClients();
 
   const { 
     workouts, 
@@ -76,7 +85,7 @@ function App() {
     getClientSchedules, 
     addSchedule, 
     updateSchedule, 
-    markAsCompleted, 
+    markAsCompleted,
     cancelSchedule
   } = useSchedule();
 
@@ -84,29 +93,25 @@ function App() {
     getClientProgress
   } = useProgress();
 
-  const handleAddClient = (client: Omit<Client, 'id'>) => {
-    const newClient: Client = {
-      ...client,
-      id: `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-    setClients([...clients, newClient]);
-  };
-
-  const handleUpdateClient = (id: string, updates: Partial<Client>) => {
-    setClients(clients.map(c => c.id === id ? { ...c, ...updates } : c));
-  };
-
-  const handleDeleteClient = (id: string) => {
-    setClients(clients.filter(c => c.id !== id));
-  };
+  const { isOnline } = useSupabaseStatus();
 
   const handleClearAllData = () => {
     localStorage.clear();
   };
 
+  // Loading state
+  if (isLoadingClients) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex flex-col pt-32 items-center text-red-500">
+        <Loader2 className="w-10 h-10 animate-spin mb-4" />
+        <p className="font-medium animate-pulse">Carregando dados do banco online...</p>
+      </div>
+    );
+  }
+
   // Client area
   if (isAuthenticated && isClient) {
-    const currentClient = getCurrentClient();
+    const currentClient = getCurrentClient(clients);
     if (!currentClient) {
       logout();
       return null;
@@ -245,7 +250,23 @@ function App() {
     };
 
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex">
+      <div className="min-h-screen bg-[#0a0a0f] flex flex-col md:flex-row">
+        {/* Mobile Header with Hamburger */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-red-500/20 bg-[#0d0d12] sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+              <span className="text-white font-bold text-xs">AF</span>
+             </div>
+             <h2 className="text-lg font-bold text-white">AngraFit</h2>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-gray-400 hover:text-white"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+
         <AdminSidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
@@ -254,8 +275,11 @@ function App() {
           onToggleMusic={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
           unreadMessages={totalUnreadMessages}
           pendingPayments={pendingPayments.length}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          isOnline={isOnline}
         />
-        <main className="flex-1 ml-64 p-8">
+        <main className="flex-1 md:ml-64 p-4 md:p-8">
           {renderSection()}
         </main>
         <MusicPlayer isOpen={isMusicPlayerOpen} onClose={() => setIsMusicPlayerOpen(false)} />
@@ -264,6 +288,10 @@ function App() {
   }
 
   // Login screen
+  if (showLanding) {
+    return <LandingScreen onEnterApp={() => setShowLanding(false)} />;
+  }
+
   return (
     <LoginScreen
       onLoginAdmin={loginAdmin}

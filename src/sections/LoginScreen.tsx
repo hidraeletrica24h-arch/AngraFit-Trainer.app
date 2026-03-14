@@ -9,7 +9,7 @@ import type { Client } from '@/types';
 
 interface LoginScreenProps {
   onLoginAdmin: (username: string, password: string) => boolean;
-  onLoginClient: (clientId: string, password: string) => boolean;
+  onLoginClient: (clientId: string, password: string) => Promise<boolean>;
   clients: Client[];
 }
 
@@ -35,7 +35,8 @@ export function LoginScreen({ onLoginAdmin, onLoginClient, clients }: LoginScree
     }, 500);
   };
 
-  const handleClientLogin = () => {
+  const handleClientLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault(); // Prevent default form submission if called from a form
     setError('');
     if (!selectedClient) {
       setError('Selecione um cliente');
@@ -47,13 +48,11 @@ export function LoginScreen({ onLoginAdmin, onLoginClient, clients }: LoginScree
     }
     
     setIsLoading(true);
-    setTimeout(() => {
-      const success = onLoginClient(selectedClient, clientPass);
-      if (!success) {
-        setError('Senha incorreta');
-      }
-      setIsLoading(false);
-    }, 500);
+    const success = await onLoginClient(selectedClient, clientPass);
+    if (!success) {
+      setError('ID ou senha incorretos');
+    }
+    setIsLoading(false);
   };
 
   return (

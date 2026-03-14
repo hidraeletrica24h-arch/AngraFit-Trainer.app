@@ -16,10 +16,10 @@ import { MEAL_TYPES, FOOD_DATABASE } from '@/types';
 interface DietsManagerProps {
   clients: Client[];
   diets: Diet[];
-  onAddDiet: (diet: Omit<Diet, 'id' | 'createdAt'>) => void;
-  onUpdateDiet: (id: string, updates: Partial<Diet>) => void;
-  onDeleteDiet: (id: string) => void;
-  onGenerateAI: (clientId: string, goal: string) => void;
+  onAddDiet: (diet: Omit<Diet, 'id' | 'createdAt'>) => Promise<any>;
+  onUpdateDiet: (id: string, updates: Partial<Diet>) => Promise<any>;
+  onDeleteDiet: (id: string) => Promise<any>;
+  onGenerateAI: (clientId: string, goal: string, gender: 'masculino' | 'feminino') => Promise<any>;
 }
 
 export function DietsManager({ 
@@ -93,7 +93,7 @@ export function DietsManager({
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedClient) return;
 
     const dietData = {
@@ -102,14 +102,18 @@ export function DietsManager({
       meals: formData.meals
     };
 
-    if (editingDiet) {
-      onUpdateDiet(editingDiet.id, dietData);
-    } else {
-      onAddDiet(dietData);
+    try {
+      if (editingDiet) {
+        await onUpdateDiet(editingDiet.id, dietData);
+      } else {
+        await onAddDiet(dietData);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar dieta:', error);
+      alert('Erro ao salvar dieta. Verifique a conexão.');
     }
-
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const resetForm = () => {
@@ -129,15 +133,28 @@ export function DietsManager({
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta dieta?')) {
-      onDeleteDiet(id);
+  const handleDelete = async (id: string) => {
+    console.log("Tentativa de excluir dieta ID:", id);
+    if (!id) {
+      console.error("Erro: ID da dieta está undefined!");
+      return;
+    }
+
+    if (window.confirm('Tem certeza que deseja excluir esta dieta?')) {
+      try {
+        console.log("Chamando onDeleteDiet para ID:", id);
+        await onDeleteDiet(id);
+        console.log("onDeleteDiet executado com sucesso.");
+      } catch (error) {
+        console.error('Erro ao excluir dieta:', error);
+        alert('Não foi possível excluir la dieta. Tente novamente.');
+      }
     }
   };
 
   const handleGenerateAI = () => {
     if (!selectedClient || !selectedClientData) return;
-    onGenerateAI(selectedClient, selectedClientData.goal);
+    onGenerateAI(selectedClient, selectedClientData.goal, selectedClientData.gender || 'masculino');
     setIsAIDialogOpen(false);
   };
 
@@ -224,7 +241,12 @@ export function DietsManager({
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(diet.id); }}
+                            type="button"
+                            onClick={(e) => { 
+                              e.preventDefault();
+                              e.stopPropagation(); 
+                              handleDelete(diet.id); 
+                            }}
                             className="text-red-400 hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" strokeWidth={1.5} />

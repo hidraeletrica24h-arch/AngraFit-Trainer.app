@@ -6,5 +6,7 @@ export { usePayments } from './usePayments';
 export { useMessages } from './useMessages';
 export { useSchedule } from './useSchedule';
 export { useProgress } from './useProgress';
+export { useSupabaseStatus } from './useSupabaseStatus';
+export { useClients } from './useClients';
 export { useVoice, parseVoiceCommand } from './useVoice';
 export { useMusic } from './useMusic';

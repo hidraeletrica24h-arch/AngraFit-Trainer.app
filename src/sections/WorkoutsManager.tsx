@@ -17,10 +17,10 @@ import { DAYS_OF_WEEK, EXERCISE_DATABASE, MUSCLE_GROUPS } from '@/types';
 interface WorkoutsManagerProps {
   clients: Client[];
   workouts: Workout[];
-  onAddWorkout: (workout: Omit<Workout, 'id' | 'createdAt'>) => void;
-  onUpdateWorkout: (id: string, updates: Partial<Workout>) => void;
-  onDeleteWorkout: (id: string) => void;
-  onGenerateAI: (clientId: string, goal: string, level: string, days: number) => void;
+  onAddWorkout: (workout: Omit<Workout, 'id' | 'createdAt'>) => Promise<any>;
+  onUpdateWorkout: (id: string, updates: Partial<Workout>) => Promise<any>;
+  onDeleteWorkout: (id: string) => Promise<any>;
+  onGenerateAI: (clientId: string, goal: string, level: string, days: number, gender: 'masculino' | 'feminino') => Promise<any>;
 }
 
 export function WorkoutsManager({ 
@@ -86,7 +86,7 @@ export function WorkoutsManager({
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedClient) return;
 
     const workoutData = {
@@ -96,14 +96,18 @@ export function WorkoutsManager({
       exercises: formData.exercises
     };
 
-    if (editingWorkout) {
-      onUpdateWorkout(editingWorkout.id, workoutData);
-    } else {
-      onAddWorkout(workoutData);
+    try {
+      if (editingWorkout) {
+        await onUpdateWorkout(editingWorkout.id, workoutData);
+      } else {
+        await onAddWorkout(workoutData);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar treino:', error);
+      alert('Erro ao salvar treino. Verifique a conexão.');
     }
-
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const resetForm = () => {
@@ -125,9 +129,22 @@ export function WorkoutsManager({
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este treino?')) {
-      onDeleteWorkout(id);
+  const handleDelete = async (id: string) => {
+    console.log("Tentativa de excluir treino ID:", id);
+    if (!id) {
+      console.error("Erro: ID do treino está undefined!");
+      return;
+    }
+
+    if (window.confirm('Tem certeza que deseja excluir este treino?')) {
+      try {
+        console.log("Chamando onDeleteWorkout para ID:", id);
+        await onDeleteWorkout(id);
+        console.log("onDeleteWorkout executado com sucesso.");
+      } catch (error) {
+        console.error('Erro ao excluir treino:', error);
+        alert('Não foi possível excluir o treino. Tente novamente.');
+      }
     }
   };
 
@@ -162,7 +179,7 @@ export function WorkoutsManager({
 
   const handleGenerateAI = () => {
     if (!selectedClient || !selectedClientData) return;
-    onGenerateAI(selectedClient, aiParams.goal, selectedClientData.level, aiParams.days);
+    onGenerateAI(selectedClient, aiParams.goal, selectedClientData.level, aiParams.days, selectedClientData.gender || 'masculino');
     setIsAIDialogOpen(false);
   };
 
@@ -269,7 +286,12 @@ export function WorkoutsManager({
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(workout.id); }}
+                            type="button"
+                            onClick={(e) => { 
+                              e.preventDefault();
+                              e.stopPropagation(); 
+                              handleDelete(workout.id); 
+                            }}
                             className="text-red-400 hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" strokeWidth={1.5} />

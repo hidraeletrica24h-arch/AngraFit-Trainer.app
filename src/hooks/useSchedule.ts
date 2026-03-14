@@ -1,8 +1,42 @@
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import type { Schedule } from '@/types';
 
 export function useSchedule() {
-  const [schedules, setSchedules] = useLocalStorage<Schedule[]>('angrafit_schedules', []);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSchedules();
+  }, []);
+
+  const fetchSchedules = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*');
+
+      if (error) throw error;
+
+      const formattedSchedules: Schedule[] = (data || []).map(s => ({
+        id: s.id,
+        clientId: s.client_id,
+        clientName: s.client_name,
+        date: s.date,
+        time: s.time,
+        duration: s.duration,
+        type: s.type,
+        status: s.status,
+        notes: s.notes
+      }));
+      setSchedules(formattedSchedules);
+    } catch (e) {
+      console.error('Erro ao buscar agendamentos:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getClientSchedules = (clientId: string): Schedule[] => {
     return schedules.filter(s => s.clientId === clientId).sort((a, b) => {
@@ -30,37 +64,78 @@ export function useSchedule() {
       .slice(0, limit);
   };
 
-  const addSchedule = (schedule: Omit<Schedule, 'id'>): Schedule => {
-    const newSchedule: Schedule = {
-      ...schedule,
-      id: `schedule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-    setSchedules(prev => [...prev, newSchedule]);
-    return newSchedule;
+  const addSchedule = async (schedule: Omit<Schedule, 'id'>) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .insert([{
+          client_id: schedule.clientId,
+          client_name: schedule.clientName,
+          date: schedule.date,
+          time: schedule.time,
+          duration: schedule.duration,
+          type: schedule.type,
+          status: schedule.status,
+          notes: schedule.notes || ''
+        }]);
+
+      if (error) throw error;
+      await fetchSchedules();
+      return true;
+    } catch (e) {
+      console.error('Erro ao adicionar agendamento:', e);
+      throw e;
+    }
   };
 
-  const updateSchedule = (id: string, updates: Partial<Schedule>): boolean => {
-    setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
-    return true;
+  const updateSchedule = async (id: string, updates: Partial<Schedule>) => {
+    try {
+      const dbUpdates: any = {};
+      if (updates.clientId) dbUpdates.client_id = updates.clientId;
+      if (updates.clientName) dbUpdates.client_name = updates.clientName;
+      if (updates.date) dbUpdates.date = updates.date;
+      if (updates.time) dbUpdates.time = updates.time;
+      if (updates.duration) dbUpdates.duration = updates.duration;
+      if (updates.type) dbUpdates.type = updates.type;
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+      const { error } = await supabase
+        .from('schedules')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchSchedules();
+      return true;
+    } catch (e) {
+      console.error('Erro ao atualizar agendamento:', e);
+      throw e;
+    }
   };
 
-  const markAsCompleted = (id: string): boolean => {
-    setSchedules(prev => prev.map(s => 
-      s.id === id ? { ...s, status: 'concluido' as const } : s
-    ));
-    return true;
+  const markAsCompleted = async (id: string) => {
+    return updateSchedule(id, { status: 'concluido' });
   };
 
-  const cancelSchedule = (id: string): boolean => {
-    setSchedules(prev => prev.map(s => 
-      s.id === id ? { ...s, status: 'cancelado' as const } : s
-    ));
-    return true;
+  const cancelSchedule = async (id: string) => {
+    return updateSchedule(id, { status: 'cancelado' });
   };
 
-  const deleteSchedule = (id: string): boolean => {
-    setSchedules(prev => prev.filter(s => s.id !== id));
-    return true;
+  const deleteSchedule = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setSchedules(prev => prev.filter(s => s.id !== id));
+      return true;
+    } catch (e) {
+      console.error('Erro ao remover agendamento:', e);
+      throw e;
+    }
   };
 
   const getWeekSchedules = (startDate: Date): Schedule[] => {
@@ -79,6 +154,7 @@ export function useSchedule() {
 
   return {
     schedules,
+    isLoadingSchedules: isLoading,
     getClientSchedules,
     getSchedulesByDate,
     getUpcomingSchedules,

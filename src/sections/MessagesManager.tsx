@@ -14,10 +14,10 @@ import type { Client, Message } from '@/types';
 interface MessagesManagerProps {
   clients: Client[];
   messages: Message[];
-  onAddMessage: (message: Omit<Message, 'id' | 'date' | 'read'>) => void;
-  onMarkAsRead: (id: string) => void;
-  onMarkAllAsRead: (clientId: string) => void;
-  onDeleteMessage: (id: string) => void;
+  onAddMessage: (message: Omit<Message, 'id' | 'date' | 'read'>) => Promise<any>;
+  onMarkAsRead: (id: string) => Promise<any>;
+  onMarkAllAsRead: (clientId: string) => Promise<any>;
+  onDeleteMessage: (id: string) => Promise<any>;
 }
 
 const MESSAGE_TYPES = [
@@ -50,18 +50,41 @@ export function MessagesManager({
 
   const unreadCount = clientMessages.filter(m => !m.read).length;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClient || !formData.title || !formData.content) return;
 
-    onAddMessage({
-      clientId: selectedClient,
-      title: formData.title,
-      content: formData.content,
-      type: formData.type
-    });
+    try {
+      await onAddMessage({
+        clientId: selectedClient,
+        title: formData.title,
+        content: formData.content,
+        type: formData.type
+      });
+      setFormData({ title: '', content: '', type: 'aviso' });
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      alert('Erro ao enviar mensagem. Verifique a conexão.');
+    }
+  };
 
-    setFormData({ title: '', content: '', type: 'aviso' });
+  const handleDelete = async (id: string) => {
+    console.log("Tentativa de excluir mensagem ID:", id);
+    if (!id) {
+      console.error("Erro: ID da mensagem está undefined!");
+      return;
+    }
+
+    if (window.confirm('Tem certeza que deseja excluir esta mensagem?')) {
+      try {
+        console.log("Chamando onDeleteMessage para ID:", id);
+        await onDeleteMessage(id);
+        console.log("onDeleteMessage executado com sucesso.");
+      } catch (error) {
+        console.error('Erro ao excluir mensagem:', error);
+        alert('Não foi possível excluir a mensagem. Verifique a conexão.');
+      }
+    }
   };
 
   const getTypeIcon = (type: Message['type']) => {
@@ -226,7 +249,12 @@ export function MessagesManager({
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => onDeleteMessage(message.id)}
+                            type="button"
+                            onClick={(e) => { 
+                              e.preventDefault();
+                              e.stopPropagation(); 
+                              handleDelete(message.id); 
+                            }}
                             className="text-red-400 hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" />

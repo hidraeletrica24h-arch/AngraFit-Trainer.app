@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { supabase } from '../lib/supabase';
 import type { AuthState, Client } from '@/types';
 
 const ADMIN_CREDENTIALS = {
@@ -14,8 +15,6 @@ export function useAuth() {
     userId: null,
     userName: null
   });
-
-  const [clients, setClients] = useLocalStorage<Client[]>('angrafit_clients', []);
 
   const loginAdmin = useCallback((username: string, password: string): boolean => {
     const normalizedUser = username.trim().toLowerCase();
@@ -33,19 +32,29 @@ export function useAuth() {
     return false;
   }, [setAuth]);
 
-  const loginClient = useCallback((clientId: string, password: string): boolean => {
-    const client = clients.find(c => c.id === clientId && c.password === password);
-    if (client) {
-      setAuth({
-        isAuthenticated: true,
-        userType: 'client',
-        userId: client.id,
-        userName: client.name
-      });
-      return true;
+  const loginClient = useCallback(async (clientId: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .eq('password', password)
+        .single();
+        
+      if (data && !error) {
+        setAuth({
+          isAuthenticated: true,
+          userType: 'client',
+          userId: data.id,
+          userName: data.name
+        });
+        return true;
+      }
+    } catch (e) {
+      console.error("Login Error: ", e);
     }
     return false;
-  }, [clients, setAuth]);
+  }, [setAuth]);
 
   const logout = useCallback(() => {
     setAuth({
@@ -56,12 +65,12 @@ export function useAuth() {
     });
   }, [setAuth]);
 
-  const getCurrentClient = useCallback((): Client | null => {
+  const getCurrentClient = useCallback((clientsList: Client[]): Client | null => {
     if (auth.userType === 'client' && auth.userId) {
-      return clients.find(c => c.id === auth.userId) || null;
+      return clientsList.find(c => c.id === auth.userId) || null;
     }
     return null;
-  }, [auth, clients]);
+  }, [auth]);
 
   const isAdmin = auth.userType === 'admin';
   const isClient = auth.userType === 'client';
@@ -76,8 +85,6 @@ export function useAuth() {
     loginAdmin,
     loginClient,
     logout,
-    getCurrentClient,
-    clients,
-    setClients
+    getCurrentClient
   };
 }
